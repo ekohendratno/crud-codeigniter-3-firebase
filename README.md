@@ -1,4 +1,4 @@
-# crud-codeigniter-3-firebase
+# CRUD Codeigniter 3 dengan Firebase/Firestore + Bootstrap + JQuery
 
 CRUD Firebase Realtime Database dan Realtime Firestore, JQuery
 	
