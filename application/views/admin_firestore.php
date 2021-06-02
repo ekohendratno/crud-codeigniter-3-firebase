@@ -8,14 +8,15 @@
 	<!-- Bootstrap CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 
-	<title>Tutorial Lengkap CRUD Codeigniter 3 dengan Firebase + Bootstrap</title>
+	<title>CRUD Codeigniter 3 dengan Firebase + Bootstrap</title>
 
 </head>
 <body>
 
 <div class="container" style="margin-top: 50px;">
 
-	<h4 class="text-center">Tutorial Lengkap CRUD Codeigniter 4 dengan Firebase + Bootstrap</h4><br>
+	<h4 class="text-center">Firestore</h4><br>
+	<h4 class="text-center">CRUD Codeigniter 3 dengan <a href="<?php echo base_url();?>admin/index">Firebase</a>/<a href="<?php echo base_url();?>admin/firestore">Firestore</a> + Bootstrap</h4><br>
 
 	<h5># Tambah Siswa</h5>
 	<div class="card card-default">
