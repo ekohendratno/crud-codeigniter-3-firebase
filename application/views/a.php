@@ -17,9 +17,7 @@
 
 	<h4 class="text-center">Firestore</h4><br>
 	<h4 class="text-center">CRUD Codeigniter 3 dengan <a href="<?php echo base_url();?>admin/index">Firebase</a>/<a href="<?php echo base_url();?>admin/firestore">Firestore</a> + Bootstrap</h4><br>
-	<div class="form-group">
-		<input type="text" id="search-name" class="form-control" placeholder="Search by name">
-	</div>
+
 	<h5># Tambah Siswa</h5>
 	<div class="card card-default">
 		<div class="card-body">
@@ -44,29 +42,16 @@
 	<br>
 
 	<h5># Data Siswa</h5>
-	<div class="table-responsive">
-		<table id="employee-table" class="table table-bordered">
-			<thead>
-			<tr>
-				<th>NIS</th>
-				<th>Nama Siswa</th>
-				<th>Usia</th>
-				<th width="180" class="text-center">Action</th>
-			</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
-	</div>
-
-	<div class="clearfix">
-		<div class="hint-text">Total of <b class="count">0</b> entries</div>
-		<ul class="pagination">
-			<li class="page-item"><a href="#" id="js-previous" class="page-link">Previous</a></li>
-			<li class="page-item"><a href="#" id="js-next" class="page-link">Next</a></li>
-		</ul>
-	</div>
-
+	<table id="employee-table" class="table table-bordered">
+		<tr>
+			<th>NIS</th>
+			<th>Nama Siswa</th>
+			<th>Usia</th>
+			<th width="180" class="text-center">Action</th>
+		</tr>
+		<tbody>
+		</tbody>
+	</table>
 </div>
 
 <!-- Update Model -->
@@ -146,138 +131,82 @@
 	var db = firebase.firestore();
 
 
-	$(document).ready(function () {
-		const limit = 2;
-		let deleteIDs = [];
-		let lastVisibleEmployeeSnapShot = {};
-		const employeeRef = db.collection("students");
 
-		// GET TOTAL SIZE
-		employeeRef.onSnapshot(snapshot => {
-			let size = snapshot.size;
-			$('.count').text(size);
-		});
+	getData();
+	function getData(){
+		db.collection("students").get().then((querySnapshot) => {
+			var arrObj = [];
 
-		getData();
+			querySnapshot.forEach((doc) => {
+				const data = doc.data();
 
-		function getData() {
-			employeeRef.limit(limit).onSnapshot(querySnapshot => {
-				var arrObj = [];
+				//console.log(`${doc.id} => ${data.name}`);
 
-				$('#employee-table tbody').html('');
-				querySnapshot.forEach((doc) => {
-					const data = doc.data();
+				arrObj.push(data);
 
-					//console.log(`${doc.id} => ${data.name}`);
+				getDataLayout(doc);
 
-					arrObj.push(data);
-
-					getDataLayout(doc);
-
-
-				});
-
-				$("#submitStudent").removeClass('disabled');
-				lastVisibleEmployeeSnapShot = querySnapshot.docs[querySnapshot.docs.length - 1];
-
-				//console.log("data", arrObj);
 
 			});
-		}
 
-		function getDataLayout(document) {
-			let item = `<tr>\
+			$("#submitStudent").removeClass('disabled');
+
+			//console.log("data", arrObj);
+
+		});
+	}
+
+	function getDataLayout(document){
+		let item =`<tr>\
 							<td>${document.data().nis}</td>
 							<td>${document.data().name}</td>
 							<td>${document.data().age}</td>
 							<td><button data-toggle="modal" data-target="#update-modal" class="btn btn-info updateStudent" data-id="${document.id}">Update</button>
 							<button data-toggle="modal" data-target="#remove-modal" class="btn btn-danger removeStudent" data-id="${document.id}">Delete</button></td>
 						</tr>`;
-			$('#employee-table').append(item);
-		}
+		$('#employee-table').append(item);
+	}
 
-		//Navigation
-		$("#js-previous").on('click', function (e) {
-			e.preventDefault();
-			$('#employee-table tbody').html('');
-			const queryPrevious = employeeRef.endBefore(lastVisibleEmployeeSnapShot).limit(2);
 
-			queryPrevious.get().then(snap => {
-				snap.forEach(doc => {
-					getDataLayout(doc);
-				});
-				lastVisibleEmployeeSnapShot = snap.docs[snap.docs.length - 1];
-			});
-		});
+	// Add Data
+	$('#submitStudent').on('click', function () {
+		var values = $("#addStudent").serializeArray();
+		var nis = values[0].value;
+		var name = values[1].value;
+		var age = values[2].value;
 
-		$('#js-next').on('click', function (e) {
-			e.preventDefault();
-			if ($(this).closest('.page-item').hasClass('disabled')) {
-				return false;
-			}
-			$('#employee-table tbody').html('');
-			const queryNext = employeeRef.startAfter(lastVisibleEmployeeSnapShot).limit(2);
+		db.collection("students").add({
+			nis: nis,
+			name: name,
+			age: age,
+		}).then((docRef) => {
+			getData();
 
-			queryNext.get().then(snap => {
-				snap.forEach(doc => {
-					getDataLayout(doc);
-				});
-				lastVisibleEmployeeSnapShot = snap.docs[snap.docs.length - 1];
-			});
+			$("#addStudent input").val("");
+			// menampilkan alert
+			alert("Berhasil menambah data");
+
+			console.log("Document written with ID: ", docRef.id);
+		}).catch((error) => {
+			console.error("Error adding document: ", error);
 		});
 
 
-		// SEARCH
-		$("#search-name").keyup(function () {
-			let searchString = $("#search-name").val();
-			console.log(searchString);
-			employeeRef.where("name", ">=", searchString).where("name", "<=", searchString + "\uf8ff").limit(limit).get()
-				.then(function (documentSnapshots) {
-					$('#employee-table tbody').html('');
-					documentSnapshots.docs.forEach(doc => {
-						getDataLayout(doc);
-					});
-				});
-		});
-
-		// Add Data
-		$('#submitStudent').on('click', function () {
-			var values = $("#addStudent").serializeArray();
-			var nis = values[0].value;
-			var name = values[1].value;
-			var age = values[2].value;
-
-			employeeRef.add({
-				nis: nis,
-				name: name,
-				age: age,
-			}).then((docRef) => {
-				getData();
-
-				$("#addStudent input").val("");
-				// menampilkan alert
-				alert("Berhasil menambah data");
-
-				console.log("Document written with ID: ", docRef.id);
-			}).catch((error) => {
-				console.error("Error adding document: ", error);
-			});
+	});
 
 
-		});
 
+	// Update Data
+	var updateID = 0;
+	$('body').on('click', '.updateStudent', function () {
+		updateID = $(this).attr('data-id');
+		db.collection("students").doc(updateID).get().then((doc) => {
 
-		// Update Data
-		var updateID = 0;
-		$('body').on('click', '.updateStudent', function () {
-			updateID = $(this).attr('data-id');
-			employeeRef.doc(updateID).get().then((doc) => {
+			if (doc.exists) {
+				console.log("Document data:", doc.data());
+				const data = doc.data();
 
-				if (doc.exists) {
-					console.log("Document data:", doc.data());
-					const data = doc.data();
-
-					var updateData = '<div class="form-group">\
+				var updateData = '<div class="form-group">\
                 <label for="edit_nis" class="col-md-12 col-form-label">Nomor Induk Siswa</label>\
                 <div class="col-md-12">\
                     <input id="edit_nis" type="text" class="form-control" name="edit_nis" value="' + data.nis + '" placeholder="Nomor Induk Siswa" required autofocus>\
@@ -295,77 +224,76 @@
                     <input id="edit_age" type="text" class="form-control" name="edit_age" value="' + data.age + '" placeholder="Usia" required autofocus>\
                 </div>\
             </div>';
-					$('#updateBody').html(updateData);
+				$('#updateBody').html(updateData);
 
-				} else {
-					// doc.data() will be undefined in this case
-					console.log("No such document!");
-				}
+			} else {
+				// doc.data() will be undefined in this case
+				console.log("No such document!");
+			}
 
-			}).catch((error) => {
-				console.log("Error getting documents: ", error);
-			});
-
+		}).catch((error) => {
+			console.log("Error getting documents: ", error);
 		});
 
-		$('.updateStudent').on('click', function () {
-			var values = $(".users-update-record-model").serializeArray();
-			var postData = {
-				nis: values[0].value,
-				name: values[1].value,
-				age: values[2].value,
-			};
+	});
 
-			employeeRef.doc(updateID).set(postData).then(function () {
-				getData();
-				// menyembunyikan modal
-				$("#update-modal").modal('hide');
-				// menampilkan alert
-				alert("Berhasil mengubah data");
-			});
+	$('.updateStudent').on('click', function () {
+		var values = $(".users-update-record-model").serializeArray();
+		var postData = {
+			nis: values[0].value,
+			name: values[1].value,
+			age: values[2].value,
+		};
 
+		db.collection("students").doc(updateID).set(postData).then(function () {
+			getData();
+			// menyembunyikan modal
+			$("#update-modal").modal('hide');
+			// menampilkan alert
+			alert("Berhasil mengubah data");
 		});
 
+	});
 
-		// Remove Data
-		$("body").on('click', '.removeStudent', function () {
-			var id = $(this).attr('data-id');
-			$('body').find('.users-remove-record-model').append('<input name="id" type="hidden" value="' + id + '">');
-		});
 
-		$('.deleteStudent').on('click', function () {
-			var values = $(".users-remove-record-model").serializeArray();
-			var id = values[0].value;
+	// Remove Data
+	$("body").on('click', '.removeStudent', function () {
+		var id = $(this).attr('data-id');
+		$('body').find('.users-remove-record-model').append('<input name="id" type="hidden" value="' + id + '">');
+	});
 
-			employeeRef.doc(id).delete().then(() => {
-				console.log("Document successfully deleted!");
+	$('.deleteStudent').on('click', function () {
+		var values = $(".users-remove-record-model").serializeArray();
+		var id = values[0].value;
 
-				getData();
+		db.collection("students").doc(id).delete().then(() => {
+			console.log("Document successfully deleted!");
 
-				$('body').find('.users-remove-record-model').find("input").remove();
-				// menyembunyikan modal
-				$("#remove-modal").modal('hide');
-				// menampilkan alert
-				alert("Berhasil menghapus data");
+			getData();
 
-			}).catch((error) => {
-				console.error("Error removing document: ", error);
-			});
-
-		});
-		$('.remove-data-from-delete-form').click(function () {
 			$('body').find('.users-remove-record-model').find("input").remove();
+			// menyembunyikan modal
+			$("#remove-modal").modal('hide');
+			// menampilkan alert
+			alert("Berhasil menghapus data");
+
+		}).catch((error) => {
+			console.error("Error removing document: ", error);
 		});
 
+	});
+	$('.remove-data-from-delete-form').click(function () {
+		$('body').find('.users-remove-record-model').find("input").remove();
 	});
 
 
 
 
 
+
 	/**
-	// Get Data
-	firebase.database().ref('students/').on('value', function (snapshot) {
+	 // Get Data
+	 firebase.database().ref('students/').on('value', function (snapshot) {
 		var value = snapshot.val();
 		var htmls = [];
 		$.each(value, function (index, value) {
@@ -384,9 +312,9 @@
 		$("#submitStudent").removeClass('disabled');
 	});
 
-	/**
-	// Add Data
-	$('#submitStudent').on('click', function () {
+	 /**
+	 // Add Data
+	 $('#submitStudent').on('click', function () {
 		var values = $("#addStudent").serializeArray();
 		var nis = values[0].value;
 		var name = values[1].value;
@@ -406,9 +334,9 @@
 		alert("Berhasil menambah data");
 	});
 
-	// Update Data
-	var updateID = 0;
-	$('body').on('click', '.updateStudent', function () {
+	 // Update Data
+	 var updateID = 0;
+	 $('body').on('click', '.updateStudent', function () {
 		updateID = $(this).attr('data-id');
 		firebase.database().ref('students/' + updateID).on('value', function (snapshot) {
 			var values = snapshot.val();
@@ -435,7 +363,7 @@
 		});
 	});
 
-	$('.updateStudent').on('click', function () {
+	 $('.updateStudent').on('click', function () {
 		var values = $(".users-update-record-model").serializeArray();
 		var postData = {
 			nis: values[0].value,
@@ -451,13 +379,13 @@
 		alert("Berhasil mengubah data");
 	});
 
-	// Remove Data
-	$("body").on('click', '.removeStudent', function () {
+	 // Remove Data
+	 $("body").on('click', '.removeStudent', function () {
 		var id = $(this).attr('data-id');
 		$('body').find('.users-remove-record-model').append('<input name="id" type="hidden" value="' + id + '">');
 	});
 
-	$('.deleteStudent').on('click', function () {
+	 $('.deleteStudent').on('click', function () {
 		var values = $(".users-remove-record-model").serializeArray();
 		var id = values[0].value;
 		firebase.database().ref('students/' + id).remove();
@@ -467,7 +395,7 @@
 		// menampilkan alert
 		alert("Berhasil menghapus data");
 	});
-	$('.remove-data-from-delete-form').click(function () {
+	 $('.remove-data-from-delete-form').click(function () {
 		$('body').find('.users-remove-record-model').find("input").remove();
 	});*/
 </script>

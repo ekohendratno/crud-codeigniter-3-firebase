@@ -33,7 +33,7 @@ $config['measurementId'] = "G-Y319D49S0C";
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://192.168.42.158/crud-codeigniter-3-firebase';
+$config['base_url'] = 'http://localhost/crud-codeigniter-3-firebase';
 
 /*
 |--------------------------------------------------------------------------
